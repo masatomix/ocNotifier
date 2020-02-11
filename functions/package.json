@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "scripts": {
     "lint": "tslint --fix --project tsconfig.json",
     "tsc": "tsc",
@@ -21,8 +21,8 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "firebase-admin": "~7.0.0",
-    "firebase-functions": "^2.3.0",
+    "firebase-admin": "^8.9.2",
+    "firebase-functions": "^3.3.0",
     "moment": "^2.24.0",
     "request": "^2.88.0",
     "uipath-orchestrator-api-node": "^0.2.3"
