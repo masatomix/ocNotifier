@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions'
 import OrchestratorApi from 'uipath-orchestrator-api-node'
 import request from 'request'
 import moment from 'moment'
@@ -35,33 +35,41 @@ const executeLogic = async () => {
     //     }
     // }
 
-    const api = new OrchestratorApi(config)
-    // まずは認証
-    await api.authenticate()
+  const api = new OrchestratorApi(config)
+  // まずは認証
+  await api.authenticate()
 
-    const li = await api.license.find()
-    const allowed = li.Allowed
-    const used = li.Used
+  const li = await api.license.find()
+  const allowed = li.Allowed
+  const used = li.Used
 
-    const now = moment();
-    let message: string = now.format("YYYY/MM/DD HH:mm:ss")
-    message += ` 時点の ${config.serverinfo.servername} のライセンス情報です。\n`
-    for (const prop in allowed) {
-        message += `${prop}: ${used[prop]} / ${allowed[prop]}\n`
-    }
-    message += `AttendedConcurrent: ${li.AttendedConcurrent}\n`
-    message += `DevelopmentConcurrent: ${li.DevelopmentConcurrent}\n`
-    message += `StudioXConcurrent: ${li.StudioXConcurrent}\n`
-    sendSlack(message)
-    return li
+  const dataStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+  // 参考 http://watanabeyu.blogspot.com/2019/10/firebase-functionsdate9.html
+  const now = moment(dataStr)
+  let message: string = now.format('YYYY/MM/DD HH:mm')
+
+  // 上記で日本語日付を算出もしくは、環境変数にTZをを指定する
+  // https://thr3a.hatenablog.com/entry/20190417/1555510726
+
+  message += ` 時点の ${config.serverinfo.servername} のライセンス情報です。\n`
+  for (const prop in allowed) {
+    message += `${prop}: ${used[prop]} / ${allowed[prop]}\n`
+  }
+  message += `AttendedConcurrent: ${li.AttendedConcurrent}\n`
+  message += `DevelopmentConcurrent: ${li.DevelopmentConcurrent}\n`
+  message += `StudioXConcurrent: ${li.StudioXConcurrent}\n`
+  sendSlack(message)
+  return li
 }
 
-export const checkLicense = functions.https.onRequest(async (req, response) => {
-    const license = await executeLogic()
-    response.json(license)
-});
+// export const checkLicense = functions.https.onRequest(async (req, response) => {
+//   const license = await executeLogic()
+//   response.json(license)
+// })
 
 export const checkLicensePubSub = functions.pubsub
-    .topic('checkLicense').onPublish(async message => {
-        await executeLogic()
-    })
+  .schedule('0 */1 * * *')
+  .timeZone('Asia/Tokyo')
+  .onRun(async context => {
+    await executeLogic()
+  })
