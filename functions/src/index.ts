@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions'
 import OrchestratorApi from 'uipath-orchestrator-api-node'
 import request from 'request'
-import moment from 'moment'
+import moment from 'moment-timezone'
 
 const sendSlack = (message: string) => {
     const option = {
@@ -43,15 +43,15 @@ const executeLogic = async () => {
   const allowed = li.Allowed
   const used = li.Used
 
-  const dataStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
-  // 参考 http://watanabeyu.blogspot.com/2019/10/firebase-functionsdate9.html
-  const now = moment(dataStr)
-  let message: string = now.format('YYYY/MM/DD HH:mm')
+  const now = moment() // UTCやJSTで作成された時刻を、tz('Asia/Tokyo')で TokyoのTimezoneの時刻に変換
+  let message: string = now.tz('Asia/Tokyo').format('YYYY/MM/DD HH:mm')
+  // 上記でTokyoの日時に変換もしくは、環境変数にTZを指定する
 
-  // 上記で日本語日付を算出もしくは、環境変数にTZをを指定する
   // https://thr3a.hatenablog.com/entry/20190417/1555510726
+  // http://watanabeyu.blogspot.com/2019/10/firebase-functionsdate9.html
 
   message += ` 時点の ${config.serverinfo.servername} のライセンス情報です。\n`
+
   for (const prop in allowed) {
     message += `${prop}: ${used[prop]} / ${allowed[prop]}\n`
   }
@@ -68,7 +68,8 @@ const executeLogic = async () => {
 // })
 
 export const checkLicensePubSub = functions.pubsub
-  .schedule('0 */1 * * *')
+  // .schedule('0 */1 * * *')
+  .schedule('0 18 * * *')
   .timeZone('Asia/Tokyo')
   .onRun(async context => {
     await executeLogic()
